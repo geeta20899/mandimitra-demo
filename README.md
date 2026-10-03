@@ -1,0 +1,2 @@
+# mandimitra-demo
+project capestone
