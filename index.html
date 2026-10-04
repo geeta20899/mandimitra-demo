@@ -184,7 +184,15 @@ let msp=c[2];
 let quantity=+qty.value||0;
 let farmerLocation=loc.value.trim();
 let hasLocation=farmerLocation.length>0;
+if(!hasLocation){
+  const msg =
+    lang==="hi"
+    ? "किसान का स्थान दर्ज करना जरूरी है। लोकेशन बॉक्स पर क्लिक करें और आवाज़ से लिखने के लिए Windows + H दबाएँ, या स्थान टाइप करें।"
+    : "Farmer Location is required. Click the Location box and press Windows + H for voice typing, or type the location.";
 
+  alert(msg);
+  loc.focus();
+}
 last=states[state.value].map(m=>{
 
 let h=hash(state.value+crop.value+m);
