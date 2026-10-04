@@ -199,8 +199,24 @@ results.innerHTML=last.map((x,i)=>`<tr>
 function voiceLang(){return lang=="hi"?"hi-IN":lang=="mr"?"mr-IN":"en-IN"}
 
 function speak(t){
-if(!speechSynthesis)return;
-let u=new SpeechSynthesisUtterance(t);u.lang=voiceLang();speechSynthesis.cancel();speechSynthesis.speak(u)
+  const s = window.speechSynthesis;
+
+  if(!s){
+    alert("Voice is not supported on this browser.");
+    return;
+  }
+
+  s.cancel();
+
+  const u = new SpeechSynthesisUtterance(t);
+  u.lang = voiceLang();
+  u.volume = 1;
+  u.rate = 0.95;
+
+  setTimeout(function(){
+    s.resume();
+    s.speak(u);
+  },150);
 }
 
 function speakResult(i){
