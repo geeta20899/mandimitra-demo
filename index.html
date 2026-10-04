@@ -178,19 +178,7 @@ function hash(s){let h=0;for(let c of s)h=(h*31+c.charCodeAt())>>>0;return h}
 function money(n){return "₹"+Math.round(n).toLocaleString("en-IN")}
 
 function compare(){
-let farmerLocation = loc.value.trim();
 
-if(!farmerLocation){
-  const msg =
-    lang==="hi"
-    ? "कृपया किसान का स्थान दर्ज करें। वॉइस इनपुट के लिए लोकेशन बॉक्स पर क्लिक करके Windows और H दबाएँ, या स्थान टाइप करें।"
-    : "Please enter Farmer Location. Click the Location box and press Windows plus H for voice input, or type the location.";
-
-  alert(msg);
-  loc.focus();
-  speak(msg);
-  return;
-}
 let c=crops.find(x=>x[0]==crop.value);
 let msp=c[2];
 let quantity=+qty.value||0;
