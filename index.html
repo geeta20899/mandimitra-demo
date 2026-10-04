@@ -225,15 +225,39 @@ net:gross-total
 });
 
 if(hasLocation){
-last.sort((a,b)=>b.net-a.net);
+  last.sort((a,b)=>b.net-a.net);
+
+  let best = last[0];
+
+  let reason =
+    best.m +
+    " is recommended because it gives the highest Estimated Net Realization of " +
+    money(best.net) +
+    " after transport and other costs.";
+
+  summary.innerText =
+    state.value + " • " +
+    crop.value + " • " +
+    last.length + " demo mandis\n\n" +
+    "BEST MANDI: " + best.m + "\n" +
+    reason + "\n" +
+    "Decision support only. Actual selling price may vary.";
+
+  if(lang !== "mr"){
+    speak(reason);
+  }
+}
+else{
+  summary.innerText =
+    state.value + " • " +
+    crop.value + " • " +
+    last.length +
+    " demo mandis • Please enter Farmer Location to calculate distance, transport cost and Net Realization.";
 }
 
 summary.innerText=state.value+" • "+crop.value+" • "+last.length+" demo mandis";
 
-if(!hasLocation){
-summary.innerText+=" • Please enter Farmer Location to calculate distance, transport cost and Net Realization.";
-speak("Please enter your location to calculate distance, transport cost and Net Realization.");
-}
+
 
 results.innerHTML=last.map((x,i)=>`<tr>
 <td>${i+1}</td>
