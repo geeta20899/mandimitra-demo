@@ -35,7 +35,7 @@ Mandi prices, distances and mandi names are synthetic demo data.
 <button onclick="setLang('en')">English</button>
 <button onclick="setLang('hi')">हिंदी</button>
 <button onclick="setLang('mr')">मराठी</button>
-<button onclick="speak(T[lang].help)">🔊 Help</button>
+<button onclick="speakHelp()">🔊 Help</button>
 </div>
 
 <div class="card">
@@ -211,7 +211,23 @@ function speak(t){
   setTimeout(function(){
     s.speak(u);
   },100);
+}function speakHelp(){
+  let msg;
+
+  if(lang==="hi"){
+    msg="राज्य, फसल और किस्म चुनें। मात्रा, स्थान और लागत भरें। फिर मंडियों की तुलना करें।";
+  }
+  else if(lang==="mr"){
+    msg="राज्य, पीक आणि जात निवडा. प्रमाण, ठिकाण आणि खर्च भरा. नंतर बाजारांची तुलना करा.";
+  }
+  else{
+    msg="Choose the state, crop and variety. Enter quantity, location and costs, then compare mandis.";
+  }
+
+  alert(msg);
+  speak(msg);
 }
+  
  function speakResult(i){
 let x=last[i];
 speak(`Rank ${i+1}. ${x.m}. Modal price ${x.modal} rupees per quintal. Net realization ${Math.round(x.net)} rupees.`)
