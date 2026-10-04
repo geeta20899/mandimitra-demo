@@ -178,22 +178,69 @@ function hash(s){let h=0;for(let c of s)h=(h*31+c.charCodeAt())>>>0;return h}
 function money(n){return "₹"+Math.round(n).toLocaleString("en-IN")}
 
 function compare(){
-let c=crops.find(x=>x[0]==crop.value),msp=c[2],quantity=+qty.value||0;
+
+let c=crops.find(x=>x[0]==crop.value);
+let msp=c[2];
+let quantity=+qty.value||0;
+let farmerLocation=loc.value.trim();
+let hasLocation=farmerLocation.length>0;
+
 last=states[state.value].map(m=>{
-let h=hash(state.value+crop.value+m),modal=Math.round(msp*(.92+(h%25)/100)/10)*10;
-let min=Math.round(modal*.92/10)*10,max=Math.round(modal*1.08/10)*10;
-let km=20+hash(loc.value+m)%180,gross=modal*quantity,total=km*(+trans.value||0)+(+load.value||0)+(+other.value||0);
-return{m,msp,min,modal,max,km,gross,total,net:gross-total}
-}).sort((a,b)=>b.net-a.net);
+
+let h=hash(state.value+crop.value+m);
+let modal=Math.round(msp*(.92+(h%25)/100)/10)*10;
+let min=Math.round(modal*.92/10)*10;
+let max=Math.round(modal*1.08/10)*10;
+let gross=modal*quantity;
+
+if(!hasLocation){
+return{
+m,msp,min,modal,max,
+km:null,
+gross,
+total:null,
+net:null
+};
+}
+
+let km=20+hash(farmerLocation+m)%180;
+let total=km*(+trans.value||0)+(+load.value||0)+(+other.value||0);
+
+return{
+m,msp,min,modal,max,
+km,
+gross,
+total,
+net:gross-total
+};
+
+});
+
+if(hasLocation){
+last.sort((a,b)=>b.net-a.net);
+}
 
 summary.innerText=state.value+" • "+crop.value+" • "+last.length+" demo mandis";
 
+if(!hasLocation){
+summary.innerText+=" • Please enter Farmer Location to calculate distance, transport cost and Net Realization.";
+speak("Please enter your location to calculate distance, transport cost and Net Realization.");
+}
+
 results.innerHTML=last.map((x,i)=>`<tr>
-<td>${i+1}</td><td>${x.m}</td><td>${money(x.msp)}</td><td>${money(x.min)}</td>
-<td><b>${money(x.modal)}</b></td><td>${money(x.max)}</td><td>${x.km} km</td>
-<td>${money(x.gross)}</td><td>${money(x.total)}</td>
-<td class="good">${money(x.net)}</td>
-<td><button onclick="speakResult(${i})">🔊</button></td></tr>`).join("")
+<td>${i+1}</td>
+<td>${x.m}</td>
+<td>${money(x.msp)}</td>
+<td>${money(x.min)}</td>
+<td><b>${money(x.modal)}</b></td>
+<td>${money(x.max)}</td>
+<td>${x.km==null?"—":x.km+" km"}</td>
+<td>${money(x.gross)}</td>
+<td>${x.total==null?"—":money(x.total)}</td>
+<td class="good">${x.net==null?"—":money(x.net)}</td>
+<td>${x.net==null?"—":`<button onclick="speakResult(${i})">🔊</button>`}</td>
+</tr>`).join("");
+
 }
 
 function voiceLang(){return lang=="hi"?"hi-IN":lang=="mr"?"mr-IN":"en-IN"}
