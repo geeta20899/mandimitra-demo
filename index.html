@@ -199,27 +199,11 @@ results.innerHTML=last.map((x,i)=>`<tr>
 function voiceLang(){return lang=="hi"?"hi-IN":lang=="mr"?"mr-IN":"en-IN"}
 
 function speak(t){
-  const s = window.speechSynthesis;
-
-  if(!s){
-    alert("Voice is not supported on this browser.");
-    return;
-  }
-
-  s.cancel();
-
-  const u = new SpeechSynthesisUtterance(t);
+     const u = new SpeechSynthesisUtterance(t);
   u.lang = voiceLang();
-  u.volume = 1;
-  u.rate = 0.95;
-
-  setTimeout(function(){
-    s.resume();
-    s.speak(u);
-  },150);
-}
-
-function speakResult(i){
+  window.speechSynthesis.speak(u);
+  }
+ function speakResult(i){
 let x=last[i];
 speak(`Rank ${i+1}. ${x.m}. Modal price ${x.modal} rupees per quintal. Net realization ${Math.round(x.net)} rupees.`)
 }
