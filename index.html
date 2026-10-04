@@ -199,26 +199,7 @@ results.innerHTML=last.map((x,i)=>`<tr>
 function voiceLang(){return lang=="hi"?"hi-IN":lang=="mr"?"mr-IN":"en-IN"}
 
 function speak(t){
-  if(!("speechSynthesis" in window)){
-    alert("Voice is not supported in this browser.");
-    return;
-  }
-
-  let s = window.speechSynthesis;
-  s.cancel();
-
-  let u = new SpeechSynthesisUtterance(t);
-  u.lang = voiceLang();
-  u.volume = 1;
-  u.rate = 0.95;
-  u.pitch = 1;
-
-  s.resume();
-
-  setTimeout(function(){
-    s.speak(u);
-  },300);
-}f(!speechSynthesis)return;
+if(!speechSynthesis)return;
 let u=new SpeechSynthesisUtterance(t);u.lang=voiceLang();speechSynthesis.cancel();speechSynthesis.speak(u)
 }
 
