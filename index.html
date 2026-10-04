@@ -30,7 +30,17 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid 
 <b>Demo Mode:</b> MSP references are for demonstration.
 Mandi prices, distances and mandi names are synthetic demo data.
 </div>
+<div class="card">
+<label><b>Data Source</b></label>
+<select id="dataSource">
+  <option value="demo">Demo Data (Synthetic)</option>
+  <option value="goi">Government of India (AGMARKNET)</option>
+</select>
 
+<div id="sourceStatus" style="margin-top:8px;font-size:13px;">
+  Using Demo Data — synthetic mandi prices and distances.
+</div>
+</div>
 <div class="card row">
 <button onclick="setLang('en')">English</button>
 <button onclick="setLang('hi')">हिंदी</button>
@@ -186,8 +196,197 @@ crop.onchange();
 
 function hash(s){let h=0;for(let c of s)h=(h*31+c.charCodeAt())>>>0;return h}
 function money(n){return "₹"+Math.round(n).toLocaleString("en-IN")}
+async function compare(){
 
-function compare(){
+  const source=document.getElementById("dataSource").value;
+
+  if(source==="demo"){
+    document.getElementById("sourceStatus").innerText=
+      "Using Demo Data — synthetic mandi prices and distances.";
+    compareDemo();
+    return;
+  }
+
+  await compareGOI();
+}
+
+
+async function compareGOI(){
+
+  let c=crops.find(x=>x[0]==crop.value);
+  let msp=c[2];
+  let quantity=+qty.value||0;
+
+  let farmerLocation=loc.value.trim();
+  let hasLocation=farmerLocation.length>0;
+
+  if(!hasLocation){
+    alert("Farmer Location is required for distance, cost and Net Realization.");
+    loc.focus();
+  }
+
+  document.getElementById("sourceStatus").innerText=
+    "Checking Government of India (AGMARKNET) data...";
+
+  try{
+
+    const response=await fetch(
+      "https://mandimitra-capstone.onrender.com/prices"
+    );
+
+    if(!response.ok){
+      throw new Error("Backend error "+response.status);
+    }
+
+    const payload=await response.json();
+
+    const records=Array.isArray(payload)
+      ? payload
+      : (payload.records||[]);
+
+    let matched=records.filter(r=>
+      String(r.state||"").toLowerCase()===state.value.toLowerCase() &&
+      String(r.commodity||"").toLowerCase()===crop.value.toLowerCase() &&
+      r.modal_price!=null
+    );
+
+    if(!matched.length){
+
+      last=[];
+      results.innerHTML="";
+
+      document.getElementById("sourceStatus").innerText=
+        "Government of India (AGMARKNET) selected — no official records are currently available in the backend cache.";
+
+      summary.innerText=
+        "Government data is temporarily unavailable. The external Government API connection is currently unavailable. Please select Demo Data.";
+
+      return;
+    }
+
+    /* Keep latest record for each mandi */
+    const latestByMarket=new Map();
+
+    matched.forEach(r=>{
+      let key=String(r.market||"Unknown");
+
+      let old=latestByMarket.get(key);
+
+      if(!old ||
+         String(r.arrival_date||"") >
+         String(old.arrival_date||"")){
+        latestByMarket.set(key,r);
+      }
+    });
+
+    let official=[...latestByMarket.values()];
+
+    last=official.map(r=>{
+
+      let modal=Number(r.modal_price);
+      let min=r.min_price==null ? modal : Number(r.min_price);
+      let max=r.max_price==null ? modal : Number(r.max_price);
+
+      let gross=modal*quantity;
+
+      if(!hasLocation){
+        return{
+          m:r.market,
+          msp,min,modal,max,
+          km:null,
+          gross,
+          total:null,
+          net:null,
+          date:r.arrival_date
+        };
+      }
+
+      /* Distance remains synthetic in prototype */
+      let km=20+hash(farmerLocation+r.market)%180;
+
+      let total=
+        km*(+trans.value||0)+
+        (+load.value||0)+
+        (+other.value||0);
+
+      return{
+        m:r.market,
+        msp,min,modal,max,
+        km,
+        gross,
+        total,
+        net:gross-total,
+        date:r.arrival_date
+      };
+
+    });
+
+    if(hasLocation){
+      last.sort((a,b)=>b.net-a.net);
+    }
+
+    let latestDate=
+      last.map(x=>x.date)
+      .filter(Boolean)
+      .sort()
+      .slice(-1)[0] || "Not available";
+
+    document.getElementById("sourceStatus").innerText=
+      "Source: Government of India — AGMARKNET/data.gov.in | Price date: "+
+      latestDate+
+      " | Distance is a synthetic prototype estimate.";
+
+    if(hasLocation){
+
+      let best=last[0];
+
+      summary.innerText=
+        state.value+" • "+
+        crop.value+" • "+
+        last.length+
+        " Government mandi records\n\n"+
+        "BEST MANDI: "+best.m+"\n"+
+        best.m+
+        " gives the highest Estimated Net Realization of "+
+        money(best.net)+
+        ".\nDecision support only. Actual selling price may vary.";
+
+    }else{
+
+      summary.innerText=
+        "Official Government prices loaded. Enter Farmer Location to calculate distance, costs and Net Realization.";
+
+    }
+
+    results.innerHTML=last.map((x,i)=>`<tr>
+      <td>${i+1}</td>
+      <td>${x.m}</td>
+      <td>${money(x.msp)}</td>
+      <td>${money(x.min)}</td>
+      <td><b>${money(x.modal)}</b></td>
+      <td>${money(x.max)}</td>
+      <td>${x.km==null?"—":x.km+" km"}</td>
+      <td>${money(x.gross)}</td>
+      <td>${x.total==null?"—":money(x.total)}</td>
+      <td class="good">${x.net==null?"—":money(x.net)}</td>
+      <td>${x.net==null?"—":`<button onclick="speakResult(${i})">🔊</button>`}</td>
+    </tr>`).join("");
+
+  }
+  catch(err){
+
+    last=[];
+    results.innerHTML="";
+
+    document.getElementById("sourceStatus").innerText=
+      "Government of India (AGMARKNET) — connection currently unavailable.";
+
+    summary.innerText=
+      "Government data is temporarily unavailable. Please select Demo Data.";
+
+  }
+}
+function compareDemo(){
 
 let c=crops.find(x=>x[0]==crop.value);
 let msp=c[2];
