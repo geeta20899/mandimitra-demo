@@ -1,0 +1,319 @@
+
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MandiMitra Demo</title>
+<style>
+body{font-family:Arial;margin:0;background:#f4f7f4}header{background:#25612c;color:white;padding:18px}
+main{max-width:1100px;margin:auto;padding:15px}.card{background:white;padding:15px;margin:12px 0;border-radius:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+label{font-weight:bold}input,select,button{width:100%;padding:9px;margin-top:4px;box-sizing:border-box}
+button{background:#25612c;color:white;border:0;border-radius:6px;cursor:pointer}.row{display:flex;gap:8px}
+.row button{width:auto}.note{background:#fff3cd;padding:10px;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #ddd;padding:6px;white-space:nowrap}
+.chat{height:180px;overflow:auto;border:1px solid #ccc;padding:8px}.u,.b{padding:8px;margin:5px;border-radius:8px}
+.u{background:#e5f2e5;text-align:right}.b{background:#eee}.good{font-weight:bold;color:#176b25}
+</style>
+</head>
+<body>
+
+<header>
+<h2>MandiMitra — Team Demo</h2>
+<div>20 Crops • 10 States • Net Realization • Voice • Chatbot</div>
+</header>
+
+<main>
+
+<div class="note">
+<b>Demo Mode:</b> MSP references are for demonstration.
+Mandi prices, distances and mandi names are synthetic demo data.
+</div>
+
+<div class="card row">
+<button onclick="setLang('en')">English</button>
+<button onclick="setLang('hi')">हिंदी</button>
+<button onclick="setLang('mr')">मराठी</button>
+<button onclick="alert('Help works'); speak('Choose the state, crop and variety. Enter quantity, location and costs, then compare mandis.')">🔊 Help</button>
+</div>
+
+<div class="card">
+<div class="grid">
+
+<div>
+<label id="a">State</label>
+<select id="state"></select>
+</div>
+
+<div>
+<label id="b">Commodity</label>
+<select id="crop"></select>
+</div>
+
+<div>
+<label id="c">Variety</label>
+<select id="variety"></select>
+</div>
+
+<div>
+<label id="d">Quantity (quintal)</label>
+<input id="qty" type="number" value="20">
+</div>
+
+<div>
+<label id="e">Farmer Location</label>
+<div class="row">
+<input id="loc" value="Nashik">
+<button onclick="listen('loc')">🎤</button>
+</div>
+</div>
+
+<div>
+<label id="f">Transport ₹/km</label>
+<input id="trans" type="number" value="25">
+</div>
+
+<div>
+<label id="g">Loading ₹</label>
+<input id="load" type="number" value="500">
+</div>
+
+<div>
+<label id="h">Other Cost ₹</label>
+<input id="other" type="number" value="0">
+</div>
+
+</div>
+
+<br>
+<button id="cmp" onclick="compare()">Compare Mandis</button>
+</div>
+
+<div class="card">
+<h3 id="rtitle">Results</h3>
+<div id="summary"></div><br>
+
+<div style="overflow:auto">
+<table>
+<thead>
+<tr>
+<th>Rank</th><th>Mandi</th><th>MSP</th><th>Min</th><th>Modal</th>
+<th>Max</th><th>Distance</th><th>Gross</th><th>Total Cost</th><th>Net</th><th>🔊</th>
+</tr>
+</thead>
+<tbody id="results"></tbody>
+</table>
+</div>
+</div>
+
+<div class="card">
+<h3 id="ctitle">Farmer Assistance Chatbot</h3>
+<div id="chat" class="chat">
+<div class="b">Namaste. Ask me about MSP, modal price, best mandi or Net Realization.</div>
+</div>
+
+<div class="row">
+<input id="q" placeholder="Type your question">
+<button onclick="listen('q')">🎤</button>
+<button onclick="ask()">Send</button>
+</div>
+</div>
+
+</main>
+
+<script>
+
+const crops=[
+["Paddy","Common",2441],["Jowar","Hybrid",4023],["Bajra","Standard",2900],
+["Maize","Standard",2410],["Tur (Arhar)","Standard",8450],["Moong","Standard",8780],
+["Urad","Standard",8200],["Groundnut","In-shell",7517],["Soyabean","Yellow",5708],
+["Cotton","Medium Staple",8267],["Ragi","Standard",5205],["Sunflower Seed","Standard",8343],
+["Sesamum","Standard",10346],["Nigerseed","Standard",10052],["Wheat","Standard",2585],
+["Barley","Standard",2150],["Gram","Standard",5875],["Masur (Lentil)","Standard",7000],
+["Rapeseed/Mustard","Standard",6200],["Safflower","Standard",6540]
+];
+
+const states={
+"Maharashtra":["Nashik Demo Mandi","Pune Demo Mandi"],
+"Madhya Pradesh":["Indore Demo Mandi","Ujjain Demo Mandi"],
+"Rajasthan":["Jaipur Demo Mandi","Kota Demo Mandi"],
+"Karnataka":["Bengaluru Demo Mandi","Hubballi Demo Mandi"],
+"Uttar Pradesh":["Lucknow Demo Mandi","Kanpur Demo Mandi"],
+"Gujarat":["Ahmedabad Demo Mandi","Rajkot Demo Mandi"],
+"Punjab":["Ludhiana Demo Mandi","Bathinda Demo Mandi"],
+"Haryana":["Karnal Demo Mandi","Hisar Demo Mandi"],
+"Telangana":["Hyderabad Demo Mandi","Warangal Demo Mandi"],
+"Tamil Nadu":["Coimbatore Demo Mandi","Madurai Demo Mandi"]
+};
+
+const T={
+en:{x:["State","Commodity","Variety","Quantity (quintal)","Farmer Location","Transport ₹/km","Loading ₹","Other Cost ₹"],
+cmp:"Compare Mandis",res:"Results",chat:"Farmer Assistance Chatbot",ph:"Type your question",
+help:"Choose state, crop and variety. Enter quantity and costs, then compare mandis."},
+hi:{x:["राज्य","फसल","किस्म","मात्रा","किसान का स्थान","परिवहन ₹/किमी","लोडिंग ₹","अन्य खर्च ₹"],
+cmp:"मंडियों की तुलना करें",res:"परिणाम",chat:"किसान सहायता चैटबॉट",ph:"अपना सवाल लिखें",
+help:"राज्य, फसल और किस्म चुनें। मात्रा और खर्च भरें और मंडियों की तुलना करें।"},
+mr:{x:["राज्य","पीक","जात","प्रमाण","शेतकऱ्याचे ठिकाण","वाहतूक ₹/किमी","लोडिंग ₹","इतर खर्च ₹"],
+cmp:"बाजारांची तुलना करा",res:"निकाल",chat:"शेतकरी सहाय्य चॅटबॉट",ph:"तुमचा प्रश्न लिहा",
+help:"राज्य, पीक आणि जात निवडा. प्रमाण आणि खर्च भरा आणि बाजारांची तुलना करा."}
+};
+
+let lang="en",last=[];
+
+function setLang(l){
+lang=l;
+["a","b","c","d","e","f","g","h"].forEach((id,i)=>document.getElementById(id).innerText=T[l].x[i]);
+cmp.innerText=T[l].cmp;rtitle.innerText=T[l].res;ctitle.innerText=T[l].chat;q.placeholder=T[l].ph
+}
+
+state.innerHTML=Object.keys(states).map(x=>`<option>${x}</option>`).join("");
+
+crop.innerHTML=crops.map(x=>`<option>${x[0]}</option>`).join("");
+
+crop.onchange=()=>{let x=crops.find(z=>z[0]==crop.value);variety.innerHTML=`<option>${x[1]}</option>`};
+crop.onchange();
+
+function hash(s){let h=0;for(let c of s)h=(h*31+c.charCodeAt())>>>0;return h}
+function money(n){return "₹"+Math.round(n).toLocaleString("en-IN")}
+
+function compare(){
+
+let c=crops.find(x=>x[0]==crop.value);
+let msp=c[2];
+let quantity=+qty.value||0;
+let farmerLocation=loc.value.trim();
+let hasLocation=farmerLocation.length>0;
+
+last=states[state.value].map(m=>{
+
+let h=hash(state.value+crop.value+m);
+let modal=Math.round(msp*(.92+(h%25)/100)/10)*10;
+let min=Math.round(modal*.92/10)*10;
+let max=Math.round(modal*1.08/10)*10;
+let gross=modal*quantity;
+
+if(!hasLocation){
+return{
+m,msp,min,modal,max,
+km:null,
+gross,
+total:null,
+net:null
+};
+}
+
+let km=20+hash(farmerLocation+m)%180;
+let total=km*(+trans.value||0)+(+load.value||0)+(+other.value||0);
+
+return{
+m,msp,min,modal,max,
+km,
+gross,
+total,
+net:gross-total
+};
+
+});
+
+if(hasLocation){
+last.sort((a,b)=>b.net-a.net);
+}
+
+summary.innerText=state.value+" • "+crop.value+" • "+last.length+" demo mandis";
+
+if(!hasLocation){
+summary.innerText+=" • Please enter Farmer Location to calculate distance, transport cost and Net Realization.";
+speak("Please enter your location to calculate distance, transport cost and Net Realization.");
+}
+
+results.innerHTML=last.map((x,i)=>`<tr>
+<td>${i+1}</td>
+<td>${x.m}</td>
+<td>${money(x.msp)}</td>
+<td>${money(x.min)}</td>
+<td><b>${money(x.modal)}</b></td>
+<td>${money(x.max)}</td>
+<td>${x.km==null?"—":x.km+" km"}</td>
+<td>${money(x.gross)}</td>
+<td>${x.total==null?"—":money(x.total)}</td>
+<td class="good">${x.net==null?"—":money(x.net)}</td>
+<td>${x.net==null?"—":`<button onclick="speakResult(${i})">🔊</button>`}</td>
+</tr>`).join("");
+
+}
+
+function voiceLang(){return lang=="hi"?"hi-IN":lang=="mr"?"mr-IN":"en-IN"}
+
+function speak(t){
+  const s = window.speechSynthesis;
+
+  s.cancel();
+
+  const u = new SpeechSynthesisUtterance(t);
+  u.lang = voiceLang();
+  u.volume = 1;
+  u.rate = 0.95;
+
+  setTimeout(function(){
+    s.speak(u);
+  },100);
+}function speakHelp(){
+  let msg;
+
+  if(lang==="hi"){
+    msg="राज्य, फसल और किस्म चुनें। मात्रा, स्थान और लागत भरें। फिर मंडियों की तुलना करें।";
+  }
+  else if(lang==="mr"){
+    msg="राज्य, पीक आणि जात निवडा. प्रमाण, ठिकाण आणि खर्च भरा. नंतर बाजारांची तुलना करा.";
+  }
+  else{
+    msg="Choose the state, crop and variety. Enter quantity, location and costs, then compare mandis.";
+  }
+
+  alert(msg);
+  speak(msg);
+}
+  
+ function speakResult(i){
+let x=last[i];
+speak(`Rank ${i+1}. ${x.m}. Modal price ${x.modal} rupees per quintal. Net realization ${Math.round(x.net)} rupees.`)
+}
+
+function listen(id){
+let R=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!R){alert("Speech recognition not available. Please type.");return}
+let r=new R();r.lang=voiceLang();r.onresult=e=>document.getElementById(id).value=e.results[0][0].transcript;r.start()
+}
+
+function bubble(t,c){chat.innerHTML+=`<div class="${c}">${t}</div>`;chat.scrollTop=chat.scrollHeight}
+
+function ask(){
+let s=q.value.trim();if(!s)return;bubble(s,"u");q.value="";
+let a="";
+if(/msp|support|समर्थन|हमीभाव/i.test(s)){
+let c=crops.find(x=>x[0]==crop.value);a=`${c[0]} MSP reference: ${money(c[2])} per quintal.`
+}
+else if(/best|highest|mandi|कौन|चांगला|सर्वोत्तम/i.test(s)&&last.length){
+a=`Best demo result: ${last[0].m} with estimated Net Realization ${money(last[0].net)}.`
+}
+else if(/modal|भाव/i.test(s)&&last.length){
+a=last.map(x=>`${x.m}: ${money(x.modal)}`).join(", ")
+}
+else if(/net|realization/i.test(s)){
+a="Net Realization = Modal Price × Quantity − Transport − Loading − Other Costs."
+}
+else{
+a="I can help with MSP, modal price, best mandi and Net Realization."
+}
+bubble(a,"b");speak(a)
+}
+
+q.addEventListener("keydown",e=>{if(e.key=="Enter")ask()});
+
+setLang("en");
+compare();
+
+</script>
+</body>
+</html>
