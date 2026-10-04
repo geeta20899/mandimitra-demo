@@ -199,10 +199,19 @@ results.innerHTML=last.map((x,i)=>`<tr>
 function voiceLang(){return lang=="hi"?"hi-IN":lang=="mr"?"mr-IN":"en-IN"}
 
 function speak(t){
-     const u = new SpeechSynthesisUtterance(t);
+  const s = window.speechSynthesis;
+
+  s.cancel();
+
+  const u = new SpeechSynthesisUtterance(t);
   u.lang = voiceLang();
-  window.speechSynthesis.speak(u);
-  }
+  u.volume = 1;
+  u.rate = 0.95;
+
+  setTimeout(function(){
+    s.speak(u);
+  },100);
+}
  function speakResult(i){
 let x=last[i];
 speak(`Rank ${i+1}. ${x.m}. Modal price ${x.modal} rupees per quintal. Net realization ${Math.round(x.net)} rupees.`)
