@@ -178,7 +178,14 @@ function hash(s){let h=0;for(let c of s)h=(h*31+c.charCodeAt())>>>0;return h}
 function money(n){return "₹"+Math.round(n).toLocaleString("en-IN")}
 
 function compare(){
+let farmerLocation = loc.value.trim();
 
+if(!farmerLocation){
+  summary.innerText = "Please enter Farmer Location to calculate transport cost and Net Realization.";
+  results.innerHTML = "";
+  speak("Please enter your location to calculate transport cost and Net Realization.");
+  return;
+}
 let c=crops.find(x=>x[0]==crop.value);
 let msp=c[2];
 let quantity=+qty.value||0;
