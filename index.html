@@ -65,7 +65,7 @@ Mandi prices, distances and mandi names are synthetic demo data.
 <label id="e">Farmer Location</label>
 <div class="row">
 <input id="loc" value="Nashik">
-<button onclick="chatListen()">🎤</button>
+<button onclick="listen('loc')">🎤</button>
 </div>
 </div>
 
@@ -288,40 +288,7 @@ let r=new R();r.lang=voiceLang();r.onresult=e=>document.getElementById(id).value
 
 function bubble(t,c){chat.innerHTML+=`<div class="${c}">${t}</div>`;chat.scrollTop=chat.scrollHeight}
 
-function ask(){function chatListen(){
-
-  let R=window.SpeechRecognition||window.webkitSpeechRecognition;
-
-  if(!R){
-    alert("Speech recognition is not available. Please type your question.");
-    return;
-  }
-
-  let r=new R();
-  r.lang=voiceLang();
-  r.interimResults=false;
-  r.maxAlternatives=1;
-
-  r.onresult=function(e){
-
-    let text=e.results[0][0].transcript;
-
-    q.value=text;
-
-    setTimeout(function(){
-      ask(true);
-    },300);
-  };
-
-  r.onerror=function(){
-    alert("Voice was not understood. Please try again or type your question.");
-  };
-
-  r.start();
-}
-  
-  function ask(useVoice=false){
-  
+function ask(){
 let s=q.value.trim();if(!s)return;bubble(s,"u");q.value="";
 let a="";
 if(/msp|support|समर्थन|हमीभाव/i.test(s)){
@@ -339,11 +306,7 @@ a="Net Realization = Modal Price × Quantity − Transport − Loading − Other
 else{
 a="I can help with MSP, modal price, best mandi and Net Realization."
 }
-bubble(a,"b");
-
-if(useVoice && lang!=="mr"){
-  speak(a);
-}
+bubble(a,"b");speak(a)
 }
 
 q.addEventListener("keydown",e=>{if(e.key=="Enter")ask()});
